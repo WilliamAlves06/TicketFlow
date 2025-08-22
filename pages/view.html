@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="antialiased">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualizar OS - Sistema de Gerenciamento</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#10b981',
+                        'primary-foreground': '#ffffff',
+                        background: '#fafafa',
+                        foreground: '#0f172a',
+                        card: '#ffffff',
+                        'card-foreground': '#0f172a',
+                        border: '#e2e8f0',
+                        'muted-foreground': '#64748b'
+                    },
+                    fontFamily: {
+                        'space-grotesk': ['Space Grotesk', 'sans-serif'],
+                        'dm-sans': ['DM Sans', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="min-h-screen bg-background font-dm-sans">
+    <!-- Header -->
+    <header class="border-b border-border bg-card">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <button onclick="goBack()" class="inline-flex items-center justify-center rounded-md text-sm font-medium border border-border bg-background hover:bg-gray-50 h-9 px-3">
+                        <i data-lucide="arrow-left" class="h-4 w-4 mr-2"></i>
+                        Voltar
+                    </button>
+                    <div class="flex items-center gap-3">
+                        <i data-lucide="clipboard-list" class="h-8 w-8 text-primary"></i>
+                        <div>
+                            <h1 class="text-2xl font-bold text-foreground font-space-grotesk" id="order-title">Carregando...</h1>
+                            <p class="text-sm text-muted-foreground" id="order-id">OS-000</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button onclick="openEditModal()" class="inline-flex items-center justify-center rounded-md text-sm font-medium border border-border bg-background hover:bg-gray-50 h-9 px-3">
+                        <i data-lucide="edit" class="h-4 w-4 mr-2"></i>
+                        Editar
+                    </button>
+                    <button onclick="openStatusModal()" class="inline-flex items-center justify-center rounded-md text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-3">
+                        <i data-lucide="refresh-cw" class="h-4 w-4 mr-2"></i>
+                        Alterar Status
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container mx-auto px-6 py-6">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Main Content -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Order Details -->
+                <div class="rounded-lg border border-border bg-card text-card-foreground shadow-sm">
+                    <div class="p-6 border-b border-border">
+                        <h2 class="text-lg font-semibold font-space-grotesk">Detalhes da Ordem de Serviço</h2>
+                    </div>
+                    <div class="p-6 space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-sm font-medium text-muted-foreground">Cliente</label>
+                                <p class="text-base font-medium" id="detail-client">-</p>
+                            </div>
+                            <div>
+                                <label class="text-sm font-medium text-muted-foreground">Técnico Responsável</label>
+                                <p class="text-base font-medium" id="detail-technician">-</p>
+                            </div>
+                            <div>
+                                <label class="text-sm font-medium text-muted-foreground">Data de Criação</label>
+                                <p class="text-base font-medium" id="detail-created">-</p>
+                            </div>
+                            <div>
+                                <label class="text-sm font-medium text-muted-foreground">Prioridade</label>
+                                <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold" id="detail-priority">-</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-muted-foreground">Descrição do Serviço</label>
+                            <p class="text-base mt-1" id="detail-description">-</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Timeline -->
+                <div class="rounded-lg border border-border bg-card text-card-foreground shadow-sm">
+                    <div class="p-6 border-b border-border">
+                        <h2 class="text-lg font-semibold font-space-grotesk">Histórico da OS</h2>
+                    </div>
+                    <div class="p-6">
+                        <div class="space-y-4" id="timeline-container">
+                            <!-- Timeline items will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Comments Section -->
+                <div class="rounded-lg border border-border bg-card text-card-foreground shadow-sm">
+                    <div class="p-6 border-b border-border">
+                        <h2 class="text-lg font-semibold font-space-grotesk">Observações e Comentários</h2>
+                    </div>
+                    <div class="p-6">
+                        <div class="space-y-4 mb-4" id="comments-container">
+                            <!-- Comments will be populated by JavaScript -->
+                        </div>
+                        <div class="border-t border-border pt-4">
+                            <form id="comment-form" class="space-y-3">
+                                <textarea id="comment-text" placeholder="Adicionar uma observação..." rows="3" 
+                                          class="flex w-full rounded-md border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"></textarea>
+                                <button type="submit" class="inline-flex items-center justify-center rounded-md text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-3">
+                                    <i data-lucide="message-circle" class="h-4 w-4 mr-2"></i>
+                                    Adicionar Comentário
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="space-y-6">
+                <!-- Status Card -->
+                <div class="rounded-lg border border-border bg-card text-card-foreground shadow-sm">
+                    <div class="p-6 border-b border-border">
+                        <h3 class="text-lg font-semibold font-space-grotesk">Status Atual</h3>
+                    </div>
+                    <div class="p-6">
+                        <div class="text-center">
+                            <div class="mb-4">
+                                <i data-lucide="clock" class="h-12 w-12 mx-auto text-muted-foreground" id="status-icon"></i>
+                            </div>
+                            <span class="inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold" id="current-status">Carregando...</span>
+                            <p class="text-sm text-muted-foreground mt-2" id="status-description">-</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="rounded-lg border border-border bg-card text-card-foreground shadow-sm">
+                    <div class="p-6 border-b border-border">
+                        <h3 class="text-lg font-semibold font-space-grotesk">Ações Rápidas</h3>
+                    </div>
+                    <div class="p-6 space-y-3">
+                        <button class="w-full inline-flex items-center justify-center rounded-md text-sm font-medium border border-border bg-background hover:bg-gray-50 h-9 px-3">
+                            <i data-lucide="printer" class="h-4 w-4 mr-2"></i>
+                            Imprimir OS
+                        </button>
+                        <button class="w-full inline-flex items-center justify-center rounded-md text-sm font-medium border border-border bg-background hover:bg-gray-50 h-9 px-3">
+                            <i data-lucide="download" class="h-4 w-4 mr-2"></i>
+                            Exportar PDF
+                        </button>
+                        <button class="w-full inline-flex items-center justify-center rounded-md text-sm font-medium border border-border bg-background hover:bg-gray-50 h-9 px-3">
+                            <i data-lucide="share" class="h-4 w-4 mr-2"></i>
+                            Compartilhar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Order Info -->
+                <div class="rounded-lg border border-border bg-card text-card-foreground shadow-sm">
+                    <div class="p-6 border-b border-border">
+                        <h3 class="text-lg font-semibold font-space-grotesk">Informações</h3>
+                    </div>
+                    <div class="p-6 space-y-3 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-muted-foreground">Tempo decorrido:</span>
+                            <span class="font-medium" id="elapsed-time">-</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-muted-foreground">Última atualização:</span>
+                            <span class="font-medium" id="last-update">-</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-muted-foreground">Criado por:</span>
+                            <span class="font-medium">Sistema</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Change Modal -->
+    <div id="status-modal" class="fixed inset-0 z-50 bg-black/50 hidden items-center justify-center p-4">
+        <div class="bg-card rounded-lg shadow-lg max-w-md w-full">
+            <div class="p-6 border-b border-border">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-lg font-semibold">Alterar Status da OS</h2>
+                    <button onclick="closeStatusModal()" class="text-muted-foreground hover:text-foreground">
+                        <i data-lucide="x" class="h-5 w-5"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <form id="status-form" class="p-6 space-y-4">
+                <div class="space-y-2">
+                    <label for="new-status" class="text-sm font-medium">Novo Status</label>
+                    <select id="new-status" class="flex h-10 w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
+                        <option value="pending">Pendente</option>
+                        <option value="in-progress">Em Andamento</option>
+                        <option value="completed">Concluída</option>
+                        <option value="cancelled">Cancelada</option>
+                    </select>
+                </div>
+
+                <div class="space-y-2">
+                    <label for="status-comment" class="text-sm font-medium">Comentário (opcional)</label>
+                    <textarea id="status-comment" placeholder="Adicione um comentário sobre a mudança de status..." rows="3" 
+                              class="flex w-full rounded-md border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"></textarea>
+                </div>
+
+                <div class="flex justify-end gap-3 pt-4">
+                    <button type="button" onclick="closeStatusModal()" class="inline-flex items-center justify-center rounded-md text-sm font-medium border border-border bg-background hover:bg-gray-50 h-9 px-3">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="inline-flex items-center justify-center rounded-md text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-3">
+                        Alterar Status
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Order Modal -->
+    <div id="edit-modal" class="fixed inset-0 z-50 bg-black/50 hidden items-center justify-center p-4">
+        <div class="bg-card rounded-lg shadow-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-border">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-lg font-semibold">Editar Ordem de Serviço</h2>
+                    <button onclick="closeEditModal()" class="text-muted-foreground hover:text-foreground">
+                        <i data-lucide="x" class="h-5 w-5"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <form id="edit-form" class="p-6 space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                        <label for="edit-title" class="text-sm font-medium">Título da OS</label>
+                        <input type="text" id="edit-title" 
+                               class="flex h-10 w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <label for="edit-client" class="text-sm font-medium">Cliente</label>
+                        <input type="text" id="edit-client" 
+                               class="flex h-10 w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <label for="edit-technician" class="text-sm font-medium">Técnico Responsável</label>
+                        <select id="edit-technician" class="flex h-10 w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
+                            <option value="João Silva">João Silva</option>
+                            <option value="Maria Santos">Maria Santos</option>
+                            <option value="Pedro Oliveira">Pedro Oliveira</option>
+                            <option value="Ana Costa">Ana Costa</option>
+                        </select>
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <label for="edit-priority" class="text-sm font-medium">Prioridade</label>
+                        <select id="edit-priority" class="flex h-10 w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
+                            <option value="low">Baixa</option>
+                            <option value="medium">Média</option>
+                            <option value="high">Alta</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <label for="edit-description" class="text-sm font-medium">Descrição do Serviço</label>
+                    <textarea id="edit-description" rows="4" 
+                              class="flex w-full rounded-md border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"></textarea>
+                </div>
+
+                <div class="space-y-2">
+                    <label for="edit-notes" class="text-sm font-medium">Observações Adicionais</label>
+                    <textarea id="edit-notes" placeholder="Adicione observações sobre as alterações..." rows="3" 
+                              class="flex w-full rounded-md border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"></textarea>
+                </div>
+
+                <div class="flex justify-end gap-3 pt-4">
+                    <button type="button" onclick="closeEditModal()" class="inline-flex items-center justify-center rounded-md text-sm font-medium border border-border bg-background hover:bg-gray-50 h-9 px-3">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="inline-flex items-center justify-center rounded-md text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-3">
+                        <i data-lucide="save" class="h-4 w-4 mr-2"></i>
+                        Salvar Alterações
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Mock data - in a real app, this would come from URL parameters or API
+        const mockOrder = {
+            id: "OS-001",
+            title: "Manutenção Preventiva - Ar Condicionado",
+            client: "Empresa ABC Ltda",
+            technician: "João Silva",
+            status: "in-progress",
+            priority: "high",
+            createdAt: "2024-01-15",
+            description: "Limpeza e verificação do sistema de ar condicionado do escritório principal. Incluir troca de filtros, verificação de vazamentos e teste de funcionamento.",
+            timeline: [
+                {
+                    date: "2024-01-15 09:00",
+                    action: "OS criada",
+                    user: "Sistema",
+                    status: "pending"
+                },
+                {
+                    date: "2024-01-15 10:30",
+                    action: "OS atribuída ao técnico",
+                    user: "Supervisor",
+                    status: "pending"
+                },
+                {
+                    date: "2024-01-15 14:00",
+                    action: "Iniciado atendimento",
+                    user: "João Silva",
+                    status: "in-progress"
+                }
+            ],
+            comments: [
+                {
+                    date: "2024-01-15 14:15",
+                    user: "João Silva",
+                    text: "Iniciando a inspeção do equipamento. Filtros estão muito sujos, será necessária a troca."
+                },
+                {
+                    date: "2024-01-15 15:30",
+                    user: "João Silva",
+                    text: "Filtros trocados. Verificando sistema de refrigeração."
+                }
+            ]
+        };
+
+        const statusConfig = {
+            pending: { 
+                label: "Pendente", 
+                color: "bg-yellow-100 text-yellow-800", 
+                icon: "clock",
+                description: "Aguardando início do atendimento"
+            },
+            "in-progress": { 
+                label: "Em Andamento", 
+                color: "bg-blue-100 text-blue-800", 
+                icon: "alert-circle",
+                description: "Serviço sendo executado"
+            },
+            completed: { 
+                label: "Concluída", 
+                color: "bg-green-100 text-green-800", 
+                icon: "check-circle",
+                description: "Serviço finalizado com sucesso"
+            },
+            cancelled: { 
+                label: "Cancelada", 
+                color: "bg-red-100 text-red-800", 
+                icon: "x-circle",
+                description: "Ordem de serviço cancelada"
+            }
+        };
+
+        const priorityConfig = {
+            low: { label: "Baixa", color: "bg-gray-100 text-gray-800" },
+            medium: { label: "Média", color: "bg-orange-100 text-orange-800" },
+            high: { label: "Alta", color: "bg-red-100 text-red-800" }
+        };
+
+        function loadOrderDetails() {
+            // In a real app, you would get the order ID from URL parameters
+            const order = mockOrder;
+            
+            // Update header
+            document.getElementById('order-title').textContent = order.title;
+            document.getElementById('order-id').textContent = order.id;
+            
+            // Update details
+            document.getElementById('detail-client').textContent = order.client;
+            document.getElementById('detail-technician').textContent = order.technician;
+            document.getElementById('detail-created').textContent = new Date(order.createdAt).toLocaleDateString('pt-BR');
+            document.getElementById('detail-description').textContent = order.description;
+            
+            // Update priority
+            const priorityInfo = priorityConfig[order.priority];
+            const priorityElement = document.getElementById('detail-priority');
+            priorityElement.textContent = priorityInfo.label;
+            priorityElement.className = `inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${priorityInfo.color}`;
+            
+            // Update status
+            const statusInfo = statusConfig[order.status];
+            const statusElement = document.getElementById('current-status');
+            statusElement.textContent = statusInfo.label;
+            statusElement.className = `inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold ${statusInfo.color}`;
+            
+            document.getElementById('status-description').textContent = statusInfo.description;
+            document.getElementById('status-icon').setAttribute('data-lucide', statusInfo.icon);
+            
+            // Update timeline
+            renderTimeline(order.timeline);
+            
+            // Update comments
+            renderComments(order.comments);
+            
+            // Update info
+            const createdDate = new Date(order.createdAt);
+            const now = new Date();
+            const diffTime = Math.abs(now - createdDate);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            document.getElementById('elapsed-time').textContent = `${diffDays} dias`;
+            document.getElementById('last-update').textContent = 'Hoje às 15:30';
+        }
+
+        function renderTimeline(timeline) {
+            const container = document.getElementById('timeline-container');
+            container.innerHTML = timeline.map((item, index) => {
+                const date = new Date(item.date);
+                const isLast = index === timeline.length - 1;
+                
+                return `
+                    <div class="flex gap-4">
+                        <div class="flex flex-col items-center">
+                            <div class="w-3 h-3 bg-primary rounded-full"></div>
+                            ${!isLast ? '<div class="w-px h-8 bg-border mt-2"></div>' : ''}
+                        </div>
+                        <div class="flex-1 pb-4">
+                            <div class="flex items-center justify-between">
+                                <h4 class="font-medium">${item.action}</h4>
+                                <span class="text-xs text-muted-foreground">${date.toLocaleString('pt-BR')}</span>
+                            </div>
+                            <p class="text-sm text-muted-foreground">Por: ${item.user}</p>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderComments(comments) {
+            const container = document.getElementById('comments-container');
+            if (comments.length === 0) {
+                container.innerHTML = '<p class="text-sm text-muted-foreground text-center py-4">Nenhum comentário ainda.</p>';
+                return;
+            }
+            
+            container.innerHTML = comments.map(comment => {
+                const date = new Date(comment.date);
+                return `
+                    <div class="border border-border rounded-lg p-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="font-medium text-sm">${comment.user}</span>
+                            <span class="text-xs text-muted-foreground">${date.toLocaleString('pt-BR')}</span>
+                        </div>
+                        <p class="text-sm">${comment.text}</p>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function goBack() {
+            window.history.back();
+        }
+
+        function openStatusModal() {
+            document.getElementById('status-modal').classList.remove('hidden');
+            document.getElementById('status-modal').classList.add('flex');
+            document.getElementById('new-status').value = mockOrder.status;
+        }
+
+        function closeStatusModal() {
+            document.getElementById('status-modal').classList.add('hidden');
+            document.getElementById('status-modal').classList.remove('flex');
+            document.getElementById('status-form').reset();
+        }
+
+        function openEditModal() {
+            // Populate form with current order data
+            document.getElementById('edit-title').value = mockOrder.title;
+            document.getElementById('edit-client').value = mockOrder.client;
+            document.getElementById('edit-technician').value = mockOrder.technician;
+            document.getElementById('edit-priority').value = mockOrder.priority;
+            document.getElementById('edit-description').value = mockOrder.description;
+            
+            document.getElementById('edit-modal').classList.remove('hidden');
+            document.getElementById('edit-modal').classList.add('flex');
+        }
+
+        function closeEditModal() {
+            document.getElementById('edit-modal').classList.add('hidden');
+            document.getElementById('edit-modal').classList.remove('flex');
+            document.getElementById('edit-form').reset();
+        }
+
+        // Event listeners
+        document.getElementById('comment-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const text = document.getElementById('comment-text').value.trim();
+            if (!text) return;
+            
+            const newComment = {
+                date: new Date().toISOString(),
+                user: "Usuário Atual",
+                text: text
+            };
+            
+            mockOrder.comments.push(newComment);
+            renderComments(mockOrder.comments);
+            document.getElementById('comment-text').value = '';
+        });
+
+        document.getElementById('status-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const newStatus = document.getElementById('new-status').value;
+            const comment = document.getElementById('status-comment').value.trim();
+            
+            // Update order status
+            mockOrder.status = newStatus;
+            
+            // Add timeline entry
+            const timelineEntry = {
+                date: new Date().toISOString(),
+                action: `Status alterado para ${statusConfig[newStatus].label}`,
+                user: "Usuário Atual",
+                status: newStatus
+            };
+            mockOrder.timeline.push(timelineEntry);
+            
+            // Add comment if provided
+            if (comment) {
+                const commentEntry = {
+                    date: new Date().toISOString(),
+                    user: "Usuário Atual",
+                    text: comment
+                };
+                mockOrder.comments.push(commentEntry);
+            }
+            
+            // Reload the page data
+            loadOrderDetails();
+            closeStatusModal();
+        });
+
+        document.getElementById('edit-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Get form data
+            const title = document.getElementById('edit-title').value.trim();
+            const client = document.getElementById('edit-client').value.trim();
+            const technician = document.getElementById('edit-technician').value;
+            const priority = document.getElementById('edit-priority').value;
+            const description = document.getElementById('edit-description').value.trim();
+            const notes = document.getElementById('edit-notes').value.trim();
+            
+            // Validate required fields
+            if (!title || !client || !description) {
+                alert('Por favor, preencha todos os campos obrigatórios.');
+                return;
+            }
+            
+            // Update order data
+            const oldData = { ...mockOrder };
+            mockOrder.title = title;
+            mockOrder.client = client;
+            mockOrder.technician = technician;
+            mockOrder.priority = priority;
+            mockOrder.description = description;
+            
+            // Add timeline entry for the edit
+            const changes = [];
+            if (oldData.title !== title) changes.push(`título alterado`);
+            if (oldData.client !== client) changes.push(`cliente alterado`);
+            if (oldData.technician !== technician) changes.push(`técnico alterado`);
+            if (oldData.priority !== priority) changes.push(`prioridade alterada`);
+            if (oldData.description !== description) changes.push(`descrição alterada`);
+            
+            const timelineEntry = {
+                date: new Date().toISOString(),
+                action: `OS editada: ${changes.join(', ')}`,
+                user: "Usuário Atual",
+                status: mockOrder.status
+            };
+            mockOrder.timeline.push(timelineEntry);
+            
+            // Add comment if notes provided
+            if (notes) {
+                const commentEntry = {
+                    date: new Date().toISOString(),
+                    user: "Usuário Atual",
+                    text: `Observações da edição: ${notes}`
+                };
+                mockOrder.comments.push(commentEntry);
+            }
+            
+            // Reload the page data
+            loadOrderDetails();
+            closeEditModal();
+            
+            // Show success message
+            alert('Ordem de serviço atualizada com sucesso!');
+        });
+
+        // Close modal when clicking outside
+        document.getElementById('status-modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeStatusModal();
+            }
+        });
+
+        document.getElementById('edit-modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeEditModal();
+            }
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            lucide.createIcons();
+            loadOrderDetails();
+        });
+    </script>
+</body>
+</html>
